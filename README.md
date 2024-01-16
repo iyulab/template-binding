@@ -1,5 +1,11 @@
 # template-binding
 
+## Startup
+[NPM](https://www.npmjs.com/package/@iyulab/template-binding)
+```
+npm install @iyulab/template-binding
+```
+
 ## How to use
 
 ```
