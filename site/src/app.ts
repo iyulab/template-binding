@@ -2,19 +2,15 @@ import { LitElement, css, html } from 'lit';
 import { customElement, query, state } from 'lit/decorators.js';
 
 import { bind } from '@iyulab/template-binding';
-import './lit-element';
 
-@customElement('my-element')
-export class MyElement extends LitElement {
+@customElement('app-shell')
+export class AppShell extends LitElement {
   
   [key: string]: any;
 
   @query('#header')
   header: HTMLHeadingElement | undefined;
-
-  @query('#my')
-  my: any;
-
+  
   @state()
   props?: string = '';
 
@@ -37,21 +33,31 @@ export class MyElement extends LitElement {
     return html`
       <div class="flex items-center justify-center h-screen">
         <div class="container mx-auto p-4">
+          <h1 class="text-center text-xl font-bold mb-4">Bind TEST</h1>
           <h1 id="header" class="text-center text-xl font-bold mb-4">hello</h1>
-          <my-lit-element id="my"></my-lit-element>
-
+          
           <div class="flex flex-wrap justify-center gap-4 mb-4">
             <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onAction1}>Props</button>
             <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onAction2}>Props + Data</button>
             <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onAction3}>DataProvider(WebAPI)</button>
             <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onAction4}>Collection</button>
             <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onActionFormat}>Format</button>
+            <button class="px-4 py-2 border border-gray-300 rounded" @click=${this.onActionObservable}>Observable</button>
           </div>
 
           <div class="flex justify-center gap-4 mb-4 w-full">
-            <textarea .value=${this.props} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0; color: black;" placeholder="props (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'props')}></textarea>
-            <textarea .value=${this.data} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0; color: black;" placeholder="data (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'data')}></textarea>
-            <textarea .value=${this.dataProvider} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0; color: black;" placeholder="dataProvider (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'dataProvider')}></textarea>
+            <div class="flex flex-col w-1/3">
+              <label>Props:</label>
+              <textarea .value=${this.props} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0; min-height: 200px" placeholder="props (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'props')}></textarea>
+            </div>
+            <div class="flex flex-col w-1/3">
+              <label>Data:</label>
+              <textarea .value=${this.data} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0;" placeholder="data (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'data')}></textarea>
+            </div>            
+            <div class="flex flex-col w-1/3">
+              <label>Data Provider:</label>
+              <textarea .value=${this.dataProvider} class="form-textarea border border-gray-300 p-2 flex-1" style="min-width: 0;" placeholder="dataProvider (JSON)" @input=${(e: Event) => this.handleInputChange(e, 'dataProvider')}></textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -67,57 +73,18 @@ export class MyElement extends LitElement {
         dataProvider: this.dataProvider ? JSON.parse(this.dataProvider) : {},
       });
     }
-
-    if (this.my) {
-      bind.binding({
-        target: this.my,
-        props: this.props ? JSON.parse(this.props) : {},
-        data: this.data ? JSON.parse(this.data) : {},
-        dataProvider: this.dataProvider ? JSON.parse(this.dataProvider) : {},
-      });
-    }
   }
 
   override update(changedProperties: Map<string | number | symbol, unknown>) {
-    // if (this.header) {
-    //   bind.binding({
-    //     target: this.header,
-    //     props: this.props ? JSON.parse(this.props) : {},
-    //     data: this.data ? JSON.parse(this.data) : {},
-    //     dataProvider: this.dataProvider ? JSON.parse(this.dataProvider) : {},
-    //   });
-    // }
-
-    // if (this.my) {
-    //   bind.binding({
-    //     target: this.my,
-    //     props: this.props ? JSON.parse(this.props) : {},
-    //     data: this.data ? JSON.parse(this.data) : {},
-    //     dataProvider: this.dataProvider ? JSON.parse(this.dataProvider) : {},
-    //   });
-    // }
-
-    // if(this.my) {
-    //   this.my["bar"] = undefined;
-    // }
-    // if(this.my) {
-    //   this.my.bar = undefined;
-    // }
-
+    
     changedProperties.forEach((_, propName) => {
       if (propName === 'props') {
         if (this.header) {
           bind.updateProps({ target: this.header, props: JSON.parse(this.props || '{}') });
         }
-        if (this.my) {
-          bind.updateProps({ target: this.my, props: JSON.parse(this.props || '{}') });
-        }
       } else if (propName === 'data') {
         if (this.header) {
           bind.updateData({ target: this.header, data: JSON.parse(this.data || '{}') });
-        }
-        if (this.my) {
-          bind.updateData({ target: this.my, data: JSON.parse(this.data || '{}') });
         }
       } else if (propName === 'dataProvider') {
         if (this.header) {
@@ -160,7 +127,7 @@ export class MyElement extends LitElement {
     this.dataProvider = JSON.stringify({
       type: "webapi",
       url: "https://jsonplaceholder.typicode.com/users/4",
-      refreshInterval: 1000 * 3, // 3초에 한번씩 갱신
+      refreshInterval: 1000 * 3, // Update every 3 seconds
     });
   }
 
@@ -171,19 +138,19 @@ export class MyElement extends LitElement {
     };
 
     let data = {
-      // 배열의 속성 테스트
+      // test array object property
       items: [
         { name: "sydney", phone: "010-0000-0000" },
         { name: "seoul", phone: "010-0000-0001" },
         { name: "busan", phone: "010-0000-0002" }
       ],
-      // 배열의 값 테스트
+      // test array value
       messages: [
         "hello",
         "world",
         "!!"
       ],
-      // 깊은배열 테스트
+      // test deep array
       users: [
         { id: "user1", roles: ["manager", "admin"] },
         { id: "user2", roles: ["guest"] },
@@ -211,12 +178,10 @@ export class MyElement extends LitElement {
     this.dataProvider = JSON.stringify({});
   }
 
+  onActionObservable() {
+    location.href = '/observable/';
+  }
+
   static styles = css`
   `;
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'my-element': MyElement;
-  }
 }
