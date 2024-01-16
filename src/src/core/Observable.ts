@@ -1,4 +1,6 @@
 export class Observable {
+  [name: string]: any;
+
   callback?: Function;
 
   constructor(obj: any, callback?: Function) {
