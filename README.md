@@ -1,6 +1,6 @@
 # template-binding
 
-## Startup
+## Install
 [NPM](https://www.npmjs.com/package/@iyulab/template-binding)
 ```
 npm install @iyulab/template-binding
@@ -9,6 +9,8 @@ npm install @iyulab/template-binding
 ## How to use
 
 ```
+import { bind } from '@iyulab/template-binding';
+
 const props = {
   innerText: '${title}',
   style: { "background": "${color}" }
