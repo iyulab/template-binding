@@ -19,6 +19,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "noEmitOnError": false,
 
     "baseUrl": ".", // 프로젝트 루트 디렉토리를 기준으로 설정
     "paths": {

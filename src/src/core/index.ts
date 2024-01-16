@@ -84,7 +84,7 @@ class Bind {
     }
   }  
   
-  private resolveValue(data: any, key: string, defaultValue: any = '', format: string = null): any {
+  private resolveValue(data: any, key: string, defaultValue: any = '', format: string | undefined = undefined): any {
     let value = data;
     const pathParts = key.split('.');
     for (const part of pathParts) {
@@ -114,38 +114,62 @@ class Bind {
     }
   
     return value;
-  }  
+  }
+
+  private parseExpression(expr: string) {
+    const [path, format] = expr.split(':').map(s => s.trim());
+    const [key, defaultValue] = path.split('||').map(s => s.trim());
+    return { key, defaultValue, format };
+  }
   
   private applyProps(target: any, props: any, data: any) {
     Object.keys(props).forEach(propName => {
       const propValue = props[propName];
-      if (typeof propValue === 'string' && propValue.includes('${')) {
+      if(propValue === undefined) {
+        target[propName] = undefined;
+      } else if (typeof propValue === 'string' && propValue.includes('${')) {
         // 바인딩 표현식 처리
-        const replacedValue = propValue.replace(/\$\{([^}]+)\}/g, (_, expr) => {
-          const [path, format] = expr.split(':').map(s => s.trim());
-          const [key, defaultValue] = path.split('||').map(s => s.trim());
-  
-          return this.resolveValue(data, key, defaultValue, format);
-        });
-        target[propName] = replacedValue;
+        const singleExpr = /^\$\{([^}]+)\}$/;
+        const multiExpr = /\$\{([^}]+)\}/g;
+        if (singleExpr.test(propValue)) {
+          const expr = singleExpr.exec(propValue);
+          if(!expr) return;
+          const { key, defaultValue, format } = this.parseExpression(expr[1]);
+          target[propName] = this.resolveValue(data, key, defaultValue, format);
+        } else {
+          target[propName] = propValue.replace(multiExpr, (_, expr) => {
+            const { key, defaultValue, format } = this.parseExpression(expr);
+            return this.resolveValue(data, key, defaultValue, format);
+          });
+        }
       } else if (typeof propValue === 'object') {
         // 깊은 객체 처리
-        this.applyProps(target[propName], propValue, data);
+        if(propValue === null) {
+          target[propName] = null;
+        } else if(Array.isArray(propValue)) {
+          if(target[propName] === undefined) target[propName] = [];
+          target[propName] = [...target[propName]];
+          this.applyProps(target[propName], propValue, data);
+        } else {
+          if(target[propName] === undefined) target[propName] = {};
+          target[propName] = {...target[propName]};
+          this.applyProps(target[propName], propValue, data);
+        }
       } else {
         // 기본 값 할당
         target[propName] = propValue;
       }
     });
-  }  
+  }
   
   private async getDataByWebApiAsync(dataProvider: any) {
     const url = dataProvider.url;
     const method = dataProvider.method || 'GET';
     const headers = dataProvider.headers || {};
-    let fetchOptions = {
+    const fetchOptions = {
       method,
       headers,
-    };
+    } as any;
   
     // POST 또는 다른 메서드인 경우에만 body를 추가
     if (method !== 'GET' && method !== 'HEAD') {
