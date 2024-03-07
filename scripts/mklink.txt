@@ -1,7 +1,0 @@
-SET FROM_PATH="D:\data\node-packages\packages\template-binding"
-SET TO_PATH="D:\data\template-binding\src"
-mklink /J "%TO_PATH%" "%FROM_PATH%"
-
-SET FROM_PATH="D:\data\node-packages\sites\template-binding-site"
-SET TO_PATH="D:\data\template-binding\site"
-mklink /J "%TO_PATH%" "%FROM_PATH%"

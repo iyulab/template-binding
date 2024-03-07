@@ -1,3 +1,4 @@
+// src/core/Observable.ts
 export class Observable {
   [name: string]: any;
 
@@ -14,13 +15,17 @@ export class Observable {
     return new Proxy(obj, {
       set: (target, property, value) => {
         // 객체의 속성이 객체인 경우, 해당 속성도 Observable로 변환
-        if (value && typeof value === 'object' && !Observable.isObservable(value)) {
+        if (
+          value &&
+          typeof value === "object" &&
+          !Observable.isObservable(value)
+        ) {
           value = new Observable(value, observableInstance.callback);
         }
 
         const oldValue = target[property];
         target[property] = value;
-        
+
         if (observableInstance.callback) {
           observableInstance.callback(target, { property, oldValue, value });
         }
@@ -31,7 +36,7 @@ export class Observable {
           return observableInstance;
         }
         return target[property];
-      }
+      },
     });
   }
 
@@ -42,7 +47,7 @@ export class Observable {
   static getPureObject(observable: any) {
     if (Observable.isObservable(observable)) {
       const pureObject = { ...observable };
-      Object.keys(pureObject).forEach(key => {
+      Object.keys(pureObject).forEach((key) => {
         if (Observable.isObservable(pureObject[key])) {
           pureObject[key] = Observable.getPureObject(pureObject[key]);
         }
