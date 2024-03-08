@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
-    "outDir": "./dist/",
     "module": "ESNext",
     "target": "ESNext",
-    "lib": ["ESNext", "dom", "dom.iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "Bundler",
+    
+    "outDir": "./dist/",
     "declaration": true,
     "sourceMap": true,
-    "moduleResolution": "Bundler",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "isolatedModules": true
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }
