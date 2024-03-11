@@ -1,5 +1,5 @@
 {
     "main": "index.cjs.js",
-    "module": "index.esm.js",
+    "module": "index.es.js",
     "types": "index.d.ts"
 }

@@ -1,16 +1,17 @@
-// src/core/Observable.ts
+
+type onChangeCallback = (target: any, options: { property: string | symbol, oldValue: any, value: any }) => void;
+
 export class Observable {
   [name: string]: any;
 
-  callback?: Function;
+  callback?: onChangeCallback;
 
-  constructor(obj: any, callback?: Function) {
+  constructor(obj: any, callback?: onChangeCallback) {
     if (Observable.isObservable(obj)) {
       return obj; // 이미 Observable인 경우 그대로 반환
     }
 
     this.callback = callback;
-    const observableInstance = this;
 
     return new Proxy(obj, {
       set: (target, property, value) => {
@@ -20,20 +21,20 @@ export class Observable {
           typeof value === "object" &&
           !Observable.isObservable(value)
         ) {
-          value = new Observable(value, observableInstance.callback);
+          value = new Observable(value, this.callback);
         }
 
         const oldValue = target[property];
         target[property] = value;
 
-        if (observableInstance.callback) {
-          observableInstance.callback(target, { property, oldValue, value });
+        if (this.callback) {
+          this.callback(target, { property, oldValue, value });
         }
         return true;
       },
       get: (target, property) => {
         if (property === "_observableInstance") {
-          return observableInstance;
+          return this;
         }
         return target[property];
       },
@@ -58,6 +59,6 @@ export class Observable {
   }
 }
 
-export function observable(obj: any, callback?: Function) {
+export function observable(obj: any, callback?: onChangeCallback) {
   return new Observable(obj, callback);
 }

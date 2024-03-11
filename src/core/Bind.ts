@@ -1,3 +1,4 @@
+import { LitElement } from 'lit';
 import jsonata from "jsonata";
 
 type DataProvider = ( APIProvider ) & { 
@@ -30,7 +31,11 @@ export class Bind {
 
   /** ==================== Bind Field ==================== **/
  
-  
+  // 단일 표현식 ex) "{{object}}" -> { name: "world" }
+  // FIXME: "{{name}} {{age}}" 이경우 singleExpr로 처리됨 정규식 변경 필요
+  private static singleExpr = /^\{\{(.+?)\}\}$/; 
+  // 다중 표현식 ex) "Hello, {{object.name}}!" -> "Hello, world!"
+  private static multiExpr = /\{\{(.+?)\}\}/g; 
 
   /** ==================== Bind Field ==================== **/
   
@@ -93,62 +98,71 @@ export class Bind {
   /** ==================== Bind Main Methods Start ==================== **/
 
   // target에 props를 재귀적으로 바인딩합니다.
-  private static applyProps(target: any, props: any, data: any) {
-    Object.keys(props).forEach(async (propName) => {
+  private static async applyProps(target: any, props: any, data: any) {
+    const keys = Object.keys(props);
+    for (const propName of keys) {
       // 1. 속성 값 가져오기
       const value = props[propName];
       if (typeof value === "string" && value.includes("{{")) {
         // 2. 바인딩 표현식 처리
-        target[propName] = await this.findValue(props, propName, data);
+        target[propName] = await this.resolveValue(props, propName, data);
       } else if (typeof value === "object") {
         // 2. 오브젝트 객체 처리
         if (value === null) { // null인 경우
           target[propName] = null;
         } else if (Array.isArray(value)) { // 배열인 경우 => 재귀 호출
           if (target[propName] === undefined) target[propName] = [];
-          target[propName] = [...target[propName]];
-          this.applyProps(target[propName], value, data);
+          await this.applyProps(target[propName], value, data);
+          if(target instanceof LitElement) {
+            //@ts-ignore
+            target[propName] = [ ...target[propName] ];
+          }
         } else { // 객체인 경우 => 재귀 호출
           if (target[propName] === undefined) target[propName] = {};
-          target[propName] = { ...target[propName] };
-          this.applyProps(target[propName], value, data);
+          await this.applyProps(target[propName], value, data);
+          if(target instanceof LitElement) {
+            //@ts-ignore
+            target[propName] = { ...target[propName] };
+          }
         }
       } else {
         // 2. 이외 기본 값 할당 => number, boolean, string(not expression), undefined
         target[propName] = value;
       }
-    })
+    }
   }
 
-  // FixMe: {{  }} 구분자가 섞여 있을경우 처리가 안됨 
-  // ex) "{{name}} {{age}}" 이경우 singleExpr로 처리됨 정규식 변경 필요
   // props에 data를 바인딩합니다.(구분자: "{{ }}") (jsonata 문법)
-  private static async findValue(props: any, name: any, data: any) {
+  private static async resolveValue(props: any, name: any, data: any) {
     let value = props[name];
-    const singleExpr = /^\{\{(.+?)\}\}$/; // 단일 표현식 ex) "{{object}}" -> { name: "world" }
-    const multiExpr = /\{\{(.+?)\}\}/g; // 다중 표현식 ex) "Hello, {{object.name}}!" -> "Hello, world!"
-    if (singleExpr.test(value)) {
+    if (this.singleExpr.test(value)) {
       // 단일 표현식 처리 => 해당 타입으로 할당
-      const expr = singleExpr.exec(value);
-      if (expr && expr.length > 1) {
-        const expression = jsonata(expr[1]);
-        value = await expression.evaluate(data);
+      const expr = this.singleExpr.exec(value);
+      if (expr && expr[1]) {
+        value = await this.findValue(expr[1], data);
       }
-    } else if(multiExpr.test(value)) {
+    } else if(this.multiExpr.test(value)) {
       // 다중 표현식 처리 => String 타입으로 할당
-      return await this.replaceAsync(value, multiExpr, async (_, expr) => {
-        const expression = jsonata(expr);
-        return await expression.evaluate(data);
+      value = await this.replaceAsync(value, this.multiExpr, async (_match: string, expr: string) => {
+        return await this.findValue(expr, data);
       });
     }
     // 표현식이 아니 었을 경우 => 그대로 할당
     return value;
   }
 
-  private static async replaceAsync(str, regex, asyncFn) {
-    const promises = [];
-    str.replace(regex, (match, ...args) => {
-      const promise = asyncFn(match, ...args);
+  // jsonata 문법에 따라 데이터를 찾습니다.
+  private static async findValue(expr: any, data: any) {
+    const expression = jsonata(expr);
+    const result = await expression.evaluate(data);
+    return result ?? expr;
+  }
+
+  // replaceAsync: 정규식에 매칭되는 문자열을 비동기로 처리합니다.
+  private static async replaceAsync(str: any, regex: RegExp, replacer: any) {
+    const promises: any[] = [];
+    str.replace(regex, (match: string, ...args: string[]) => {
+      const promise = replacer(match, ...args);
       promises.push(promise);
     });
     const data = await Promise.all(promises);
@@ -245,7 +259,7 @@ export class Bind {
    * });
    * ```
    */
-  public static binding(p: { target: any, props: any, data?: any, dataProvider?: DataProvider }) {
+  public static async binding(p: { target: any, props: any, data?: any, dataProvider?: DataProvider }) {
     const { target, props, data, dataProvider } = p;
     this.setProps(target, props);
     if (data) {
@@ -254,7 +268,7 @@ export class Bind {
     if (dataProvider) {
       this.updateDataProvider({ target, dataProvider });
     }
-    this.refresh(target);
+    await this.refresh(target);
   }
 
   /**
@@ -262,11 +276,11 @@ export class Bind {
    * @param p - 설정할 파라미터
    * @param refresh - 업데이트 속성을 즉시 반영할지 설정합니다. 기본값은 true입니다.
    */
-  public static updateProps(p: { target: any, props: any }, refresh: boolean = true) {
+  public static async updateProps(p: { target: any, props: any }, refresh: boolean = true) {
     const { target, props } = p;
     this.setProps(target, props);
     if (refresh) {
-      this.refresh(target);
+      await this.refresh(target);
     }
   }
 
@@ -275,11 +289,11 @@ export class Bind {
    * @param p - 설정할 파라미터
    * @param refresh - 업데이트 데이터를 즉시 반영할지 설정합니다. 기본값은 true입니다.
    */
-  public static updateData(p: { target: any, data: any }, refresh: boolean = true) {
+  public static async updateData(p: { target: any, data: any }, refresh: boolean = true) {
     const { target, data } = p;
     this.setData(target, data);
     if (refresh) {
-      this.refresh(target);
+      await this.refresh(target);
     }
   }
 
@@ -289,7 +303,7 @@ export class Bind {
    * @param p.target - 바인드된 타겟 오브젝트
    * @param p.dataProvider - 설정할 데이터 제공자
    */
-  public static updateDataProvider(p: { target: any, dataProvider: DataProvider }) {
+  public static async updateDataProvider(p: { target: any, dataProvider: DataProvider }) {
     const { target, dataProvider } = p;
     this.setDataProvider(target, dataProvider);
     this.refreshData(target);
@@ -301,10 +315,10 @@ export class Bind {
    * 바인드된 타겟의 속성에 데이터를 갱신합니다.
    * @param target - 바인드된 타겟 오브젝트
    */
-  public static refresh(target: any) {
+  public static async refresh(target: any) {
     const props = this.getProps(target);
     const data = this.getData(target);
-    this.applyProps(target, props, data);
+    await this.applyProps(target, props, data);
   }
 
   /** ==================== Public Methods Start ==================== **/
