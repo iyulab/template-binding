@@ -6,7 +6,7 @@
     "name": "iyulab",
     "url": "https://www.iyulab.com"
   },
-  "homepage": "https://github.com/iyulab/template-binding",
+  "homepage": "https://github.com/iyulab-rnd/template-binding",
   "license": "MIT",
   "main": "src/index.js",
   "types": "src/index.d.ts",
