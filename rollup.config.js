@@ -28,6 +28,7 @@ export default [
       }),
       typescript({
         declaration: false,
+        declarationDir: 'dist/types',
       }),
       terser()
     ]
