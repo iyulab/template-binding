@@ -1,7 +1,7 @@
 import { LitElement } from 'lit';
 import jsonata from "jsonata";
 
-type DataProvider = ( APIProvider ) & { 
+export type DataProvider = ( APIProvider ) & { 
   /**
    * 데이터 제공자의 업데이트 주기를 설정합니다.
    * 단위는 밀리초(ms)이며, 0보다 큰 값이어야 합니다.
@@ -9,7 +9,7 @@ type DataProvider = ( APIProvider ) & {
   interval?: number 
 };
 
-interface APIProvider {
+export interface APIProvider {
   type: 'webapi';
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'HEAD' | 'PATCH';
@@ -18,7 +18,7 @@ interface APIProvider {
 }
 
 // TODO: 현재 옵션의 역할은 타이머를 관리하는 것입니다.
-interface BindOptions {
+export interface BindOptions {
   refreshId?: NodeJS.Timeout;
 }
 

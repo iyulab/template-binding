@@ -1,5 +1,4 @@
-
-type onChangeCallback = (target: any, options: { property: string | symbol, oldValue: any, value: any }) => void;
+export type onChangeCallback = (target: any, options: { property: string | symbol, oldValue: any, value: any }) => void;
 
 export class Observable {
   [name: string]: any;

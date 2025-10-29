@@ -8,28 +8,34 @@
   },
   "homepage": "https://github.com/iyulab-rnd/template-binding",
   "license": "MIT",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "iyulab build -d dist -b rollup",
-    "deploy": "iyulab publish -p"
+    "build": "vite build",
+    "deploy": "npm publish --access=public"
   },
   "dependencies": {
     "jsonata": "^2.1.0",
     "lit": "^3.3.1"
   },
   "devDependencies": {
-    "@iyulab/utils": "^0.0.9",
-    "@rollup/plugin-commonjs": "^28.0.8",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.3.0",
-    "@types/jest": "^30.0.0",
-    "jest": "^30.2.0",
-    "rollup": "^4.52.5",
-    "rollup-plugin-dts": "^6.2.3",
-    "ts-jest": "^29.4.5",
-    "typescript": "^5.9.3"
+    "@types/node": "^24.9.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-dts": "^4.5.4"
   }
 }
